@@ -1,0 +1,32 @@
+  networks:
+      net1:
+          name: br-ctlplane
+          forward: bridge
+          nic: p5p1
+          ip_address: 192.0.100.150
+          netmask: 255.255.255.0
+      net2:
+          name: br-vlan
+          forward: bridge
+          nic: p5p2
+      net3:
+          name: br-link
+          forward: bridge
+          nic: em1
+          ip_address: 10.9.88.33
+          netmask: 255.255.255.0
+      net4:
+          external_connectivity: yes
+          name: "management"
+          ip_address: "172.19.0.1"
+          netmask: "255.255.255.0"
+          forward: nat
+          dhcp:
+              range:
+                  start: "172.19.0.2"
+                  end: "172.19.0.100"
+              subnet_cidr: "172.19.0.0/24"
+              subnet_gateway: "172.19.0.1"
+          floating_ip:
+              start: "172.19.0.101"
+              end: "172.19.0.150"
