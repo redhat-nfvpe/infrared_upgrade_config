@@ -20,7 +20,7 @@ interfaces:
       bridged: yes
     - network: "br-vlan"
       bridged: yes
-    - network: "br-link"
+    - network: "br-all"
       bridged: yes
     - &external
       network: management

@@ -10,7 +10,7 @@
           forward: bridge
           nic: p5p2
       net3:
-          name: br-link
+          name: br-all
           forward: bridge
           nic: em1
           ip_address: 10.9.88.33
