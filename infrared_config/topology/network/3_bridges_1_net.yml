@@ -15,6 +15,7 @@
           nic: em1
           ip_address: 10.9.88.33
           netmask: 255.255.255.0
+          defroute: yes
       net4:
           external_connectivity: yes
           name: "management"
