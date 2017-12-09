@@ -3,7 +3,7 @@
           name: br-ctlplane
           forward: bridge
           nic: p5p1
-          ip_address: 192.168.21.200
+          ip_address: 192.0.100.150
           netmask: 255.255.255.0
       net2:
           name: br-vlan
