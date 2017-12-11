@@ -93,7 +93,7 @@ resources:
                   next_hop: {get_param: ControlPlaneDefaultRoute}
             -
               type: ovs_bridge
-              name: {get_input: bridge_name}
+              name: br-isolation
               members:
                 -
                   type: interface
@@ -117,8 +117,23 @@ resources:
                   addresses:
                     -
                       ip_netmask: {get_param: TenantIpSubnet}
+            -
+              type: ovs_bridge
+              name: {get_input: bridge_name}
+              use_dhcp: true
+              dns_servers: {get_param: DnsServers}
+              routes:
+                -
+                  #default: true
+                  ip_netmask: 0.0.0.0/0
+                  next_hop: 10.9.88.254
+              members:
+                -
+                  type: interface
+                  name: em1
+                  primary: true
+
 outputs:
   OS::stack_id:
     description: The OsNetConfigImpl resource.
     value: {get_resource: OsNetConfigImpl}
-
