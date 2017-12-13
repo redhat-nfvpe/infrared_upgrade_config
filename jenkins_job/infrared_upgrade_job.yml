@@ -47,7 +47,6 @@
           ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh destroy controller-2 || true;virsh undefine controller-2 || true'
           ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy br-all || true;virsh net-undefine br-all || true'
           ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy br-ctlplane || true;virsh net-undefine br-ctlplane || true'
-          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy br-vlan || true;virsh net-undefine br-vlan || true'
           ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy management || true;virsh net-undefine management || true'
 
       - shell: |
@@ -87,7 +86,7 @@
       - shell: |
           # validate
           pushd infrared
-          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'yum install python-ironic-inspector-tests'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'cd /opt/infrared_set_{environment}/;infrared ssh undercloud-0 "sudo yum install -y python-ironic-inspector-tests"'
 
           infrared tempest --openstack-installer tripleo --openstack-version {release} --tests=sanity
 
