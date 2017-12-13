@@ -73,8 +73,8 @@ resources:
         os_net_config:
           network_config:
             -
-              type: interface
-              name: p5p1
+              type: ovs_bridge
+              name: br-isolation
               use_dhcp: false
               dns_servers: {get_param: DnsServers}
               addresses:
@@ -91,13 +91,11 @@ resources:
                 -
                   default: true
                   next_hop: {get_param: ControlPlaneDefaultRoute}
-            -
-              type: ovs_bridge
-              name: br-isolation
+
               members:
                 -
                   type: interface
-                  name: p5p2
+                  name: p5p1
                   primary: true
                 -
                   type: vlan

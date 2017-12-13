@@ -83,8 +83,8 @@ resources:
           network_config:
 
             -
-              type: interface
-              name: eth0
+              type: ovs_bridge
+              name: br-isolation
               use_dhcp: false
               dns_servers: {get_param: DnsServers}
               addresses:
@@ -98,39 +98,36 @@ resources:
                -
                  ip_netmask: 169.254.169.254/32
                  next_hop: {get_param: EC2MetadataIp}
-            -
-              type: interface
-              name: eth1
-              use_dhcp: false
-              dns_servers: {get_param: DnsServers}
-            -
-              type: vlan
-              vlan_id: {get_param: InternalApiNetworkVlanID}
-              device: eth1
-              addresses:
+
+              members:
                 -
-                  ip_netmask: {get_param: InternalApiIpSubnet}
-            -
-              type: vlan
-              vlan_id: {get_param: TenantNetworkVlanID}
-              device: eth1
-              addresses:
+                  type: interface
+                  name: eth1
+                  primary: true
                 -
-                  ip_netmask: {get_param: TenantIpSubnet}
-            -
-              type: vlan
-              vlan_id: {get_param: StorageNetworkVlanID}
-              device: eth1
-              addresses:
+                  type: vlan
+                  vlan_id: {get_param: InternalApiNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: InternalApiIpSubnet}
                 -
-                  ip_netmask: {get_param: StorageIpSubnet}
-            -
-              type: vlan
-              vlan_id: {get_param: StorageMgmtNetworkVlanID}
-              device: eth1
-              addresses:
+                  type: vlan
+                  vlan_id: {get_param: TenantNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: TenantIpSubnet}
                 -
-                  ip_netmask: {get_param: StorageMgmtIpSubnet}
+                  type: vlan
+                  vlan_id: {get_param: StorageNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageIpSubnet}
+                -
+                  type: vlan
+                  vlan_id: {get_param: StorageMgmtNetworkVlanID}
+                  addresses:
+                    -
+                      ip_netmask: {get_param: StorageMgmtIpSubnet}
 
             -
               type: ovs_bridge
