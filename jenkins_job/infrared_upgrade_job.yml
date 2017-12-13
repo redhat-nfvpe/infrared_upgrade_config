@@ -1,0 +1,104 @@
+- wrapper:
+    name: build-timeout
+    wrappers:
+      - timeout:
+          timeout: '{timeout}'
+          timeout-var: 'BUILD_TIMEOUT'
+          fail: true
+
+- scm:
+    name: clone-infrared
+    scm:
+      - git:
+         url: 'https://github.com/redhat-openstack/infrared.git'
+         branches:
+           - origin/stable
+         basedir: infrared
+
+- job-template:
+    name: 'infrared-hybrid-{release}-deploy-{environment}'
+    node: 'slave_{environment}'
+
+    scm:
+      - clone-infrared
+    builders:
+      - shell: |
+          cp -R infrared_config_{environment}/infrared.cfg ./
+          # temporary to pick patches
+          sudo cp -R /opt/infrared_set_{environment}/plugins ./infrared/
+
+          sudo cp -R infrared_config_{environment}/topology ./infrared/plugins/virsh/vars/
+          sudo chown -R jenkins:jenkins ./infrared
+
+      - shell: |
+          # cleanup and recreate vms
+          pushd infrared
+
+          infrared plugin add all
+
+          infrared workspace checkout ci-{environment}
+          infrared workspace cleanup ci-{environment}
+          infrared virsh -vvv --host-address=host_for_{environment} --host-key=$HOME/.ssh/id_rsa --cleanup yes --kill yes --topology-nodes hybrid_undercloud:1,hybrid_controller:3 -e override.controller.memory=16384 -e override.undercloud.memory=28672 -e override.controller.cpu=4 -e override.undercloud.cpu=4
+
+          # do manual cleaning, as infrared fails to clean up sometimes
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh destroy undercloud-0 || true;virsh undefine undercloud-0 || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh destroy controller-0 || true;virsh undefine controller-0 || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh destroy controller-1 || true;virsh undefine controller-1 || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh destroy controller-2 || true;virsh undefine controller-2 || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy br-all || true;virsh net-undefine br-all || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy br-ctlplane || true;virsh net-undefine br-ctlplane || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy br-vlan || true;virsh net-undefine br-vlan || true'
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'virsh net-destroy management || true;virsh net-undefine management || true'
+
+      - shell: |
+          # provision
+          pushd infrared
+          infrared virsh -vvv --host-address=host_for_{environment} --host-key=$HOME/.ssh/id_rsa --cleanup no --kill no --topology-nodes hybrid_undercloud:1,hybrid_controller:3 -e override.controller.memory=16384 -e override.undercloud.memory=28672 -e override.controller.cpu=4 -e override.undercloud.cpu=4 --topology-network 3_bridges_1_net
+
+      - shell: |
+          # install undercloud
+          pushd infrared
+
+          infrared tripleo-undercloud -vv -o install.yml \
+              -o undercloud-install.yml \
+              --version {release} \
+              --config-file ${{WORKSPACE}}/toad_envs/test_upgrade_{release}_infrared_{environment}/undercloud.conf
+      - shell: |
+          # import images
+          pushd infrared
+
+          infrared tripleo-undercloud -vv \
+              -o undercloud-images.yml \
+              --images-task=import \
+              --images-url=https://images.rdoproject.org/newton/rdo_trunk/current-tripleo/
+      - shell: |
+          # introspect nodes
+          pushd infrared
+
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version {release} --deployment-files ${{WORKSPACE}}/toad_envs/test_upgrade_{release}_infrared_{environment} \
+              --introspect=yes --tagging=yes --deploy=no -e provison_virsh_network_name=br-ctlplane --hybrid ${{WORKSPACE}}/toad_envs/test_upgrade_{release}_infrared_{environment}/compute.json
+      - shell: |
+          # deploy
+          pushd infrared
+
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version {release} --deployment-files ${{WORKSPACE}}/toad_envs/test_upgrade_{release}_infrared_{environment} \
+              --overcloud-script ${{WORKSPACE}}/toad_envs/test_upgrade_{release}_infrared_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes \
+              -e provison_virsh_network_name=br-ctlplane --hybrid ${{WORKSPACE}}/toad_envs/test_upgrade_{release}_infrared_{environment}/compute.json  --ansible-args="skip-tags=inventory_update"
+      - shell: |
+          # validate
+          pushd infrared
+          ssh -i $HOME/.ssh/id_rsa root@host_for_{environment} 'yum install python-ironic-inspector-tests'
+
+          infrared tempest --openstack-installer tripleo --openstack-version {release} --tests=sanity
+
+    wrappers:
+      - copy-to-slave:
+          includes:
+            - '**/infrared_config_{environment}/**,**/toad_envs/**'
+          relative-to: 'userContent'
+      - build-timeout:
+          timeout: 180
+      - timestamps
+      - workspace-cleanup
+
+
