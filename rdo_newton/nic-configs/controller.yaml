@@ -146,6 +146,14 @@ resources:
                   name: eth2
                   primary: true
 
+            -
+              type: ovs_bridge
+              name: br-sriov
+              use_dhcp: false
+              members:
+                -
+                  type: interface
+                  name: eth1
 outputs:
   OS::stack_id:
     description: The OsNetConfigImpl resource.

@@ -2,6 +2,8 @@ resource_registry:
     OS::TripleO::Controller::Net::SoftwareConfig: nic-configs/controller.yaml
     OS::TripleO::Compute::Net::SoftwareConfig: nic-configs/compute.yaml
     OS::TripleO::CephStorage::Net::SoftwareConfig: nic-configs/ceph-storage.yaml
+    OS::TripleO::NodeUserData: first-boot.yaml
+    OS::TripleO::NodeExtraConfigPost: post-install.yaml
 
 parameter_defaults:
     InternalApiNetCidr: 172.17.1.0/24
@@ -27,3 +29,16 @@ parameter_defaults:
     EC2MetadataIp: 192.168.21.1
     DnsServers: ["10.11.5.19", "10.10.160.2", "10.5.30.160"]
 
+    NeutronNetworkType: 'vlan'
+    NeutronBridgeMappings: 'sriov:br-sriov'
+    NeutronNetworkVLANRanges: 'sriov:1:1'
+    NeutronMechanismDrivers: "openvswitch,sriovnicswitch"
+    NovaPCIPassthrough:
+    - devname: "p5p2"
+      physical_network: "sriov"
+#    NeutronSupportedPCIVendorDevs: ['8086:1528', '8086:10ed']
+    NeutronPhysicalDevMappings: "sriov:p5p2"
+    NeutronSriovNumVFs: "p5p2:5"
+    NovaSchedulerDefaultFilters: ['AvailabilityZoneFilter','RamFilter','ComputeFilter','ComputeCapabilitiesFilter','ImagePropertiesFilter','ServerGroupAntiAffinityFilter','ServerGroupAffinityFilter','PciPassthroughFilter']
+    ComputeKernelArgs: "intel_iommu=on default_hugepagesz=1GB hugepagesz=1G hugepages=12"
+    HostIsolatedCoreList: "'2,4,6,8,10,12,14,18,20,22,24,26,28,30'"

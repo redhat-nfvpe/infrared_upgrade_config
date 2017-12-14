@@ -131,6 +131,11 @@ resources:
                   name: em1
                   primary: true
 
+            -
+              type: interface
+              name: p5p2
+              use_dhcp: false
+              defroute: false
 outputs:
   OS::stack_id:
     description: The OsNetConfigImpl resource.
