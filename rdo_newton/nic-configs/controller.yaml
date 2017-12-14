@@ -102,7 +102,7 @@ resources:
               members:
                 -
                   type: interface
-                  name: eth1
+                  name: eth0
                   primary: true
                 -
                   type: vlan
