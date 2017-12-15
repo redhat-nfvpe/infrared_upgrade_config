@@ -13,6 +13,10 @@
           netmask: 255.255.255.0
           renew: yes
       net3:
+          name: br-link
+          forward: bridge
+          nic: p5p2
+      net4:
           external_connectivity: yes
           name: "management"
           ip_address: "10.9.86.1"
