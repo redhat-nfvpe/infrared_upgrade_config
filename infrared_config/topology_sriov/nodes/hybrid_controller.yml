@@ -20,6 +20,8 @@ interfaces:
       bridged: yes
     - network: "br-all"
       bridged: yes
+    - network: "br-link"
+      bridged: yes
     - &external
       network: management
 external_network: *external
