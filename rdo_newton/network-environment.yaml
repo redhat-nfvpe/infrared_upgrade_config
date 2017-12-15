@@ -18,7 +18,6 @@ parameter_defaults:
     TenantAllocationPools: [{'start': '172.17.2.10', 'end': '172.17.2.200'}]
     ExternalAllocationPools: [{'start': '10.9.88.109',             'end': '10.9.88.118'}]     
     ExternalInterfaceDefaultRoute: 10.9.88.254
-#    ExternalInterfaceDefaultRoute: 10.5.195.1
     InternalApiNetworkVlanID: 201
     StorageNetworkVlanID: 203
     StorageMgmtNetworkVlanID: 204
@@ -31,12 +30,12 @@ parameter_defaults:
 
     NeutronNetworkType: 'vlan'
     NeutronBridgeMappings: 'sriov:br-sriov'
-    NeutronNetworkVLANRanges: 'sriov:1:1'
+    NeutronNetworkVLANRanges: 'sriov:215:219'
     NeutronMechanismDrivers: "openvswitch,sriovnicswitch"
     NovaPCIPassthrough:
     - devname: "p5p2"
       physical_network: "sriov"
-#    NeutronSupportedPCIVendorDevs: ['8086:1528', '8086:10ed']
+    NeutronSupportedPCIVendorDevs: ['8086:1528', '8086:10ed', '8086:1515']
     NeutronPhysicalDevMappings: "sriov:p5p2"
     NeutronSriovNumVFs: "p5p2:5"
     NovaSchedulerDefaultFilters: ['AvailabilityZoneFilter','RamFilter','ComputeFilter','ComputeCapabilitiesFilter','ImagePropertiesFilter','ServerGroupAntiAffinityFilter','ServerGroupAffinityFilter','PciPassthroughFilter']
