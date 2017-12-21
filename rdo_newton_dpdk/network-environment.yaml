@@ -1,0 +1,67 @@
+resource_registry:
+    OS::TripleO::Controller::Net::SoftwareConfig: nic-configs/controller.yaml
+    OS::TripleO::Compute::Net::SoftwareConfig: nic-configs/compute.yaml
+    OS::TripleO::CephStorage::Net::SoftwareConfig: nic-configs/ceph-storage.yaml
+    OS::TripleO::NodeUserData: first-boot.yaml
+    OS::TripleO::NodeExtraConfigPost: post-install.yaml
+
+parameter_defaults:
+    InternalApiNetCidr: 172.17.1.0/24
+    StorageNetCidr: 172.17.3.0/24
+    StorageMgmtNetCidr: 172.17.4.0/24
+    TenantNetCidr: 172.17.2.0/24
+    ExternalNetCidr: 10.9.88.0/24
+    ControlPlaneSubnetCidr: '24'
+    InternalApiAllocationPools: [{'start': '172.17.1.10', 'end': '172.17.1.200'}]
+    StorageAllocationPools: [{'start': '172.17.3.10', 'end': '172.17.3.200'}]
+    StorageMgmtAllocationPools: [{'start': '172.17.4.10', 'end': '172.17.4.200'}]
+    TenantAllocationPools: [{'start': '172.17.2.10', 'end': '172.17.2.200'}]
+    ExternalAllocationPools: [{'start': '10.9.88.110',             'end': '10.9.88.118'}]
+    ExternalInterfaceDefaultRoute: 10.9.88.254
+    InternalApiNetworkVlanID: 201
+    StorageNetworkVlanID: 203
+    StorageMgmtNetworkVlanID: 204
+    ExternalNetworkVlanID: 1
+    TenantNetworkVlanID: 202
+    NeutronExternalNetworkBridge: "''"
+    ControlPlaneDefaultRoute: 192.168.21.1
+    EC2MetadataIp: 192.168.21.1
+    DnsServers: ["10.11.5.19", "10.10.160.2", "10.5.30.160"]
+
+    NeutronNetworkType: 'vlan'
+    NeutronBridgeMappings: 'dpdk:br-link'
+    NeutronNetworkVLANRanges: 'dpdk:215:219'
+#    NeutronMechanismDrivers: "openvswitch,sriovnicswitch"
+#
+    # Nova flavor to use.
+    OvercloudControlFlavor: controller
+    OvercloudComputeFlavor: compute
+    # Number of nodes to deploy.
+    ControllerCount: 3
+    ComputeCount: 2
+
+    # List of cores to be used for DPDK Poll Mode Driver
+    NeutronDpdkCoreList: "'4,6,20,22'"
+    # Number of memory channels to be used for DPDK
+    NeutronDpdkMemoryChannels: "4"
+    # NeutronDpdkSocketMemory
+    NeutronDpdkSocketMemory: "2048,2048"
+    # NeutronDpdkDriverType
+    NeutronDpdkDriverType: "vfio-pci"
+    # Datapath type for ovs bridges
+    NeutronDatapathType: "netdev"
+    # The vhost-user socket directory for OVS
+    NeutronVhostuserSocketDir: "/var/run/openvswitch"
+
+    # Reserved RAM for host processes
+    NovaReservedHostMemory: 2048
+    # A list or range of physical CPU cores to reserve for virtual machine processes.
+    # Example: NovaVcpuPinSet: ['4-12','^8'] will reserve cores from 4-12 excluding 8
+    NovaVcpuPinSet: "8,10,12,14,18,24,26,28,30"
+    # An array of filters used by Nova to filter a node.These filters will be applied in the order they are listed,
+    # so place your most restrictive filters first to make the filtering process more efficient.
+    NovaSchedulerDefaultFilters: "RamFilter,ComputeFilter,AvailabilityZoneFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,PciPassthroughFilter,NUMATopologyFilter"
+
+    ComputeKernelArgs: "intel_iommu=on iommu=pt default_hugepagesz=1GB hugepagesz=1G hugepages=32"
+    HostIsolatedCoreList: "'2,4,6,8,10,12,14,18,20,22,24,26,28,30'"
+    HostCpusList: "'3,5,7,19,21,23'"

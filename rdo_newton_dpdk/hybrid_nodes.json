@@ -1,0 +1,32 @@
+{
+    "nodes":[
+        {
+            "mac":[
+                "a0:36:9f:e7:cb:68"
+            ],
+            "name":"compute-0",
+            "cpu":"16",
+            "memory":"66560",
+            "disk":"150",
+            "arch":"x86_64",
+            "pm_type":"pxe_ipmitool",
+            "pm_user":"root",
+            "pm_password":"calvin",
+            "pm_addr":"10.9.87.34"
+        },
+        {
+            "mac":[
+                "a0:36:9f:e7:c7:e4"
+            ],
+            "name":"compute-1",
+            "cpu":"16",
+            "memory":"66560",
+            "disk":"150",
+            "arch":"x86_64",
+            "pm_type":"pxe_ipmitool",
+            "pm_user":"root",
+            "pm_password":"calvin",
+            "pm_addr":"10.9.87.35"
+        }
+    ]
+}
