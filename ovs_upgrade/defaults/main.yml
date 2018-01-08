@@ -12,3 +12,8 @@ dpdk_enabled: false
 # dpdk ports mapping {name: pci_address}
 # this may differ among compute nodes
 dpdk_ports: { "dpdk0": "0000:06:00.1" }
+
+# list of packages to upgrade
+packages_to_upgrade:
+    - openvswitch
+    - kernel

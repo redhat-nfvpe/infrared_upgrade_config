@@ -21,11 +21,13 @@
   become: true
   shell: "tripleo-repos -b master current"
 
-- name: update ovs to latest
+- name: update packages to latest
   become: true
   yum:
-    name: openvswitch
+    name: "{{ item }}"
     state: latest
+  with_items:
+    - "{{ packages_to_upgrade }}"
 
 - name: switch repo back
   become: true
@@ -89,7 +91,7 @@
     - name: "{{ ovs_config_dir }}"
     - name: "{{ ovs_log_dir }}"
     - name: "{{ ovs_run_dir }}"
-    
+
 - name: change vfio group
   become: true
   file:
