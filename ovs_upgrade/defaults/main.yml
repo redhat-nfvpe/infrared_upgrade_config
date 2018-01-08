@@ -1,0 +1,14 @@
+# tripleo repos
+tripleo_repos_url: "https://github.com/openstack/tripleo-repos.git"
+
+# openvswitch
+ovs_config_dir: "/etc/openvswitch"
+ovs_log_dir: "/var/log/openvswitch"
+ovs_run_dir: "/var/run/openvswitch"
+
+# whether dpdk is enabled on upgrading node
+dpdk_enabled: false
+
+# dpdk ports mapping {name: pci_address}
+# this may differ among compute nodes
+dpdk_ports: { "dpdk0": "0000:06:00.1" }

@@ -1,0 +1,5 @@
+---
+- hosts: compute1
+  gather_facts: true
+  roles:
+    - ovs_upgrade
