@@ -1,5 +1,5 @@
 ---
-- hosts: compute1
+- hosts: overcloud_nodes
   gather_facts: true
   roles:
     - ovs_upgrade
