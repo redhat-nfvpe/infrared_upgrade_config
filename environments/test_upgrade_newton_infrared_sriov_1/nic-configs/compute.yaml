@@ -133,6 +133,8 @@ resources:
               name: p5p2
               use_dhcp: false
               defroute: false
+              nm_controlled: true
+              hotplug: true
 outputs:
   OS::stack_id:
     description: The OsNetConfigImpl resource.
