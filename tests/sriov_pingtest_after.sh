@@ -9,7 +9,10 @@ FIP_2=$(openstack server show test-sriov_vf_2 -f value -c addresses | grep -oE '
 # start the vms as they were stopped after reboot
 openstack server start test-sriov_vf_1
 openstack server start test-sriov_vf_2
-sleep 15
+
+# wait until the vms come online
+until ping -c1 ${FIP_1} &>/dev/null; do :; done
+until ping -c1 ${FIP_2} &>/dev/null; do :; done
 
 # connect and recreate ip config
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_1} 'sudo ip addr add 10.0.10.2/24 dev eth1'
@@ -17,6 +20,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_2} 'sudo ip addr add 10.0.10.3/24 dev eth1'
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_2} 'sudo ip link set eth1 up'
+sleep 5
 
 # now test ping between vms
 OUTPUT=$(ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_1} 'ping -q -w 1 10.0.10.3; echo "result$?"')
@@ -32,4 +36,5 @@ if [[ "$OUTPUT" == *"result1"* ]]; then
     echo "ping failed"
     exit 1
 else
-    echo "ping successful"fi
+    echo "ping successful"
+fi
