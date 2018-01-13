@@ -11,8 +11,8 @@ openstack server start test-sriov_vf_1
 openstack server start test-sriov_vf_2
 
 # wait until the vms come online
-until ping -c1 ${FIP_1} &>/dev/null; do :; done
-until ping -c1 ${FIP_2} &>/dev/null; do :; done
+until ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_1} 'true' ; do :; done
+until ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_2} 'true' ; do :; done
 
 # connect and recreate ip config
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${FIP_1} 'sudo ip addr add 10.0.10.2/24 dev eth1'
