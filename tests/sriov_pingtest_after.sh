@@ -3,6 +3,10 @@
 LOGIN_USER=$1
 
 source /home/stack/overcloudrc
+
+# wait a bit until the vms are stopped properly
+sleep 30
+
 FIP_1=$(openstack server show test-sriov_vf_1 -f value -c addresses | grep -oE '10\.9\.88\.[0-9]*')
 FIP_2=$(openstack server show test-sriov_vf_2 -f value -c addresses | grep -oE '10\.9\.88\.[0-9]*')
 
