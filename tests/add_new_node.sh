@@ -1,7 +1,6 @@
-source /home/stack/overcloudrc
+source /home/stack/stackrc
 openstack overcloud node import /home/stack/instackenv_new.json
 
-openstack overcloud image upload --update-existing
 openstack overcloud node introspect --all-manageable
 openstack overcloud node provide --all-manageable
 
