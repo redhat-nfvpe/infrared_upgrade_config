@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    {
+      "name": "compute-0",
+      "mac": [
+        "A0:36:9F:A2:41:7C"
+      ],
+      "cpu": "12",
+      "memory": "131072",
+      "disk": "558",
+      "arch": "x864_64",
+      "pm_type": "pxe_ipmitool",
+      "pm_user": "TripleO",
+      "pm_password": "TripleO",
+      "pm_addr": "10.9.87.23",
+      "capabilities": "profile:compute,boot_option:local"
+    }
+  ]
+}
