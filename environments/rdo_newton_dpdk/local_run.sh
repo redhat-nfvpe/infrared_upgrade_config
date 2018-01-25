@@ -10,7 +10,7 @@ sleep 5
 infrared tripleo-undercloud -vv -o install.yml \
     -o undercloud-install.yml \
     --version newton \
-    --config-file ../infrared_upgrade_config/rdo_newton_dpdk/undercloud.conf
+    --config-file ../infrared_upgrade_config/environments/rdo_newton_dpdk/undercloud.conf
 
 sleep 5
 
@@ -22,8 +22,8 @@ infrared tripleo-undercloud -v \
 
 sleep 5
 
-infrared tripleo-overcloud -v -o overcloud-install.yml --version newton --deployment-files ../infrared_upgrade_config/rdo_newton_dpdk --introspect=yes --tagging=yes --deploy=no -e provison_virsh_network_name=br-ctlplane --hybrid ../infrared_upgrade_config/rdo_newton_dpdk/hybrid_nodes.json
+infrared tripleo-overcloud -v -o overcloud-install.yml --version newton --deployment-files ../infrared_upgrade_config/environments/rdo_newton_dpdk --introspect=yes --tagging=yes --deploy=no -e provison_virsh_network_name=br-ctlplane --hybrid ../infrared_upgrade_config/environments/rdo_newton_dpdk/hybrid_nodes.json --vbmc-force yes
 
 sleep 5
 
-infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files ../infrared_upgrade_config/rdo_newton_dpdk --overcloud-script ../../../infrared_upgrade_config/rdo_newton_dpdk/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes -e provison_virsh_network_name=br-ctlplane --hybrid ../infrared_upgrade_config/rdo_newton_dpdk/hybrid_nodes.json --ansible-args="skip-tags=inventory_update"
+infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files ../infrared_upgrade_config/environments/rdo_newton_dpdk --overcloud-script ../../../infrared_upgrade_config/environments/rdo_newton_dpdk/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes -e provison_virsh_network_name=br-ctlplane --hybrid ../infrared_upgrade_config/environments/rdo_newton_dpdk/hybrid_nodes.json --ansible-args="skip-tags=inventory_update" --vbmc-force yes
