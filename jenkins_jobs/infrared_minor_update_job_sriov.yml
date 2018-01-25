@@ -48,7 +48,7 @@
           # import images
           cd /opt/infrared
 
-          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r /opt/infrared_images/*tar* undercloud-0:/home/stack/
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/*tar* undercloud-0:/home/stack/
 
           infrared tripleo-undercloud -vv \
               -o undercloud-images.yml \
@@ -73,22 +73,43 @@
               --ansible-args="skip-tags=inventory_update" --vbmc-force yes
 
       - shell: |
-          # minor update in undercloud
+          # create vms and execute pingtest on it
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/fedora.qcow2 undercloud-0:/home/stack/
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/sriov_pingtest.sh undercloud-0:/home/stack/
           cd /opt/infrared
-          infrared ssh undercloud-0 "bash /home/stack/test_upgrade_{release}_infrared_sriov_{environment}/undercloud_minor_update.sh"
+          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest.sh 210 /home/stack/fedora.qcow2 fedora'
+
+      - shell: |
+          # minor update in undercloud
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/minor_update_scripts/undercloud_minor_update.sh undercloud-0:/home/stack/
+
+          cd /opt/infrared
+          infrared ssh undercloud-0 "bash /home/stack/undercloud_minor_update.sh"
 
           infrared tripleo-undercloud -o undercloud-update.yml --update-undercloud yes --version newton  \
-              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build false  -e undercloud_version={release}
+              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build false  -e undercloud_version={release} || true
 
       - shell: |
           # minor update in overcloud
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/minor_update_scripts/overcloud_minor_update_nodes.sh undercloud-0:/home/stack/
+
           cd /opt/infrared
-          infrared ssh undercloud-0 "bash /home/stack/test_upgrade_{release}_infrared_sriov_{environment}/overcloud_minor_update_nodes.sh"
 
           infrared tripleo-overcloud -o overcloud-update.yml --ocupdate True --build false --version {environment} \
               --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,update_collect_info,update_undercloud_validation" \
               --build false  -e undercloud_version={release} --deployment-files ./test_upgrade_{release}_infrared_sriov_{environment} \
               --overcloud-script /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/overcloud_deploy.sh
+
+          infrared ssh undercloud-0 "bash /home/stack/overcloud_minor_update_nodes.sh"
+
+      - shell: |
+          # wait a bit for the vms to be stopped after reboot
+          sleep 30
+
+          # execute pingtest on vms
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/sriov_pingtest_after.sh undercloud-0:/home/stack/
+          cd /opt/infrared
+          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest_after.sh fedora'
 
     wrappers:
       - copy-to-slave:
