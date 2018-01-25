@@ -1,8 +1,7 @@
 source /home/stack/stackrc
-openstack overcloud node import /home/stack/instackenv_new.json
+openstack overcloud node import /home/stack/instackenv_new.json --provide
 
 openstack overcloud node introspect --all-manageable
-openstack overcloud node provide --all-manageable
 
 IRONIC_RESULT=$(openstack baremetal node list -f value -c UUID -c Name | grep compute-1)
 IRONIC_ID=($IRONIC_RESULT)
