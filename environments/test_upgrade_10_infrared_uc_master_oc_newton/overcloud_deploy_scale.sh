@@ -1,6 +1,7 @@
 #!/bin/bash
 
-openstack overcloud deploy --debug --templates --control-scale 3 --compute-scale 2 --ceph-storage-scale 0 \
+openstack overcloud deploy --debug --templates /home/stack/tripleo-heat-templates-newton \
+--control-scale 3 --compute-scale 2 --ceph-storage-scale 0 \
 -e /home/stack/tripleo-heat-templates-newton/environments/puppet-pacemaker.yaml \
 -e /home/stack/tripleo-heat-templates-newton/environments/network-isolation.yaml \
 -e /home/stack/tripleo-heat-templates-newton/environments/net-single-nic-with-vlans.yaml \
