@@ -26,4 +26,4 @@ for AGENT in $AGENT_RESULT; do
     if [ "$AGENT" != "overcloud-novacompute-1.localdomain" ]; then
         openstack network agent delete $AGENT
     fi
-/done
+done
