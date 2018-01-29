@@ -11,7 +11,7 @@ SERVER_ID=($SERVER_RESULT)
 SERVER_ID=${SERVER_ID[0]}
 
 bash /home/stack/test_upgrade_10_infrared_uc_master_oc_newton/overcloud_node_delete.sh \
-$STACK_ID $NODE_ID
+$STACK_ID $SERVER_ID
 
 # remove compute service
 source /home/stack/overcloudrc
@@ -26,4 +26,4 @@ for AGENT in $AGENT_RESULT; do
     if [ "$AGENT" != "overcloud-novacompute-1.localdomain" ]; then
         openstack network agent delete $AGENT
     fi
-done
+/done
