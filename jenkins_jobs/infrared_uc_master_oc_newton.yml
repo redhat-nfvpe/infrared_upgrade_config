@@ -1,0 +1,154 @@
+- wrapper:
+    name: build-timeout
+    wrappers:
+      - timeout:
+          timeout: '{timeout}'
+          timeout-var: 'BUILD_TIMEOUT'
+          fail: true
+
+- scm:
+    name: clone-infrared-upgrade-config
+    scm:
+      - git:
+         url: 'https://github.com/redhat-nfvpe/infrared_upgrade_config.git'
+         branches:
+           - origin/stable
+         basedir: infrared_upgrade_config
+
+- job-template:
+    name: 'infrared-hybrid-{release}-deploy-{environment}-sriov-uc_master_oc_newton'
+    node: 'slave_{environment}'
+
+    scm:
+      - clone-infrared-upgrade-config
+
+   builders:
+      - shell: |
+          cd /opt/infrared
+
+          infrared workspace checkout ci-{environment}
+          infrared workspace cleanup ci-{environment}
+          infrared virsh -vvv --host-address=127.0.0.2 --host-key=$HOME/.ssh/id_rsa --cleanup yes --kill yes --topology-nodes hybrid_undercloud:1,hybrid_controller:3 \
+              -e override.controller.memory=16384 -e override.undercloud.memory=28672 -e override.controller.cpu=4 -e override.undercloud.cpu=4
+
+          # do manual cleaning, as infrared fails to clean up sometimes
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy undercloud-0 || true;virsh undefine undercloud-0 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy controller-0 || true;virsh undefine controller-0 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy controller-1 || true;virsh undefine controller-1 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy controller-2 || true;virsh undefine controller-2 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy br-all || true;virsh net-undefine br-all || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy br-ctlplane || true;virsh net-undefine br-ctlplane || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy br-vlan || true;virsh net-undefine br-vlan || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy management || true;virsh net-undefine management || true'
+
+      - shell: |
+          # provision
+          cd /opt/infrared
+          infrared virsh -vvv --host-address=127.0.0.2 --host-key=$HOME/.ssh/id_rsa --cleanup no --kill no --topology-nodes hybrid_undercloud:1,hybrid_controller:3 \
+              -e override.controller.memory=16384 -e override.undercloud.memory=28672 -e override.controller.cpu=4 -e override.undercloud.cpu=4 --topology-network 3_bridges_1_net \
+              --image-url file:///opt/infrared_images/centos-7.qcow2
+
+      - shell: |
+          # install undercloud
+          cd /opt/infrared
+
+          infrared tripleo-undercloud -vv -o install.yml \
+              -o undercloud-install.yml \
+              --version {relese} \
+              --config-file /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/undercloud.conf --images-cleanup false
+
+      - shell: |
+          # import images
+          cd /opt/infrared
+
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/*tar* undercloud-0:/home/stack/
+
+          infrared tripleo-undercloud -vv \
+              -o undercloud-images.yml \
+              --images-task=import \
+              --images-url=file:///home/stack
+
+      - shell: |
+          # introspect nodes
+          cd /opt/infrared
+
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version {release} --deployment-files /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment} \
+              --introspect=yes --tagging=yes --deploy=no -e provison_virsh_network_name=br-ctlplane \
+              --hybrid /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/compute.json --vbmc-force yes
+
+      - shell: |
+          # deploy
+          cd /opt/infrared
+
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment} \
+              --overcloud-script /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes \
+              -e provison_virsh_network_name=br-ctlplane --hybrid /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/compute.json \
+              --ansible-args="skip-tags=inventory_update" --vbmc-force yes
+
+      - shell: |
+          # create vms and execute pingtest on it
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/fedora.qcow2 undercloud-0:/home/stack/
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/sriov_pingtest.sh undercloud-0:/home/stack/
+          cd /opt/infrared
+          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest.sh 210 /home/stack/fedora.qcow2 fedora'
+
+      - shell: |
+          # upgrade undercloud
+          cd /opt/infrared
+          infrared tripleo-upgrade \
+            --undercloud-ffu-upgrade yes \
+            --undercloud-ffu-repo tripleo-repos \
+            --undercloud-ffu-releases 'ocata,pike,queens'
+
+      - shell: |
+          # apply needed patch manually
+          cd /opt/infrared
+          infrared ssh undercloud-0 'sudo yum install -y wget'
+          infrared ssh undercloud-0 'sudo wget https://git.openstack.org/cgit/openstack/heat/plain/heat/engine/resources/template_resource.py?h=refs/changes/38/533038/2 -O /usr/lib/python2.7/site-packages/heat/engine/resources/template_resource.py'
+          infrared ssh undercloud-0 'sudo rm /usr/lib/python2.7/site-packages/heat/engine/resources/template_resource.pyc'
+          infrared ssh undercloud-0 "sudo sed -i.bak -e '362,363d' /usr/lib/python2.7/site-packages/heat/engine/resources/openstack/heat/resource_group.py"
+          infrared ssh undercloud-0 'sudo rm /usr/lib/python2.7/site-packages/heat/engine/resources/openstack/heat/resource_group.pyc'
+          infrared ssh undercloud-0 'sudo systemctl restart openstack-heat-*'
+
+      - shell: |
+          # upload introspection image
+          cd /opt/infrared
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/queens/ironic-python-agent.tar* undercloud-0:/home/stack/
+          infrared ssh undercloud-0 'tar -xvf ironic-python-agent.tar'
+          infrared ssh undercloud-0 'tar -xvf overcloud-full.tar'
+          infrared ssh undercloud-0 'source /home/stack/stackrc && openstack overcloud image upload --update-existing'
+
+      - shell: |
+          # clone the newton templates
+          cd /opt/infrared
+          infrared ssh undercloud-0 'git clone --branch stable/newton https://git.openstack.org/openstack/tripleo-heat-templates tripleo-heat-templates-newton'
+
+          # copy the file needed
+          infrared ssh undercloud-0 "sudo cp /usr/share/openstack-tripleo-heat-templates/plan-environment.yaml /home/stack/tripleo-heat-templates-newton/"
+
+      - shell: |
+          # execute script to generate new node, and start process for scaling
+          cd /opt/infrared
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ${WORKSPACE}/infrared_upgrade_config/tests/create_new_node.py undercloud-0:/home/stack/
+          infrared ssh undercloud-0 '/home/stack/create_new_node.py'
+
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ${WORKSPACE}/infrared_upgrade_config/tests/add_new_node.sh undercloud-0:/home/stack/
+          infrared ssh undercloud-0 '/home/stack/add_new_node.sh'
+
+      - shell: |
+          # execute script to delete node
+          cd /opt/infrared
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ${WORKSPACE}/infrared_upgrade_config/tests/remove_node.sh undercloud-0:/home/stack/
+          infrared ssh undercloud-0 '/home/stack/remove_node.sh'
+
+    wrappers:
+      - copy-to-slave:
+          includes:
+            - '**/toad_envs/**'
+          relative-to: 'userContent'
+      - build-timeout:
+          timeout: 360
+      - timestamps
+      - workspace-cleanup
+
+
