@@ -5,8 +5,6 @@
 SEGMENTATION_ID=$1
 PATH_TO_TEST_IMAGE=$2
 LOGIN_USER=$3
-PATH_TO_FILE_1=$4
-PATH_TO_FILE_2=$5
 
 source /home/stack/overcloudrc
 
