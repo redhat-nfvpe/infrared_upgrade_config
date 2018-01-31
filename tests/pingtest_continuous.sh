@@ -5,6 +5,8 @@
 SEGMENTATION_ID=$1
 PATH_TO_TEST_IMAGE=$2
 LOGIN_USER=$3
+ALLOCATION_POOL_START=$4
+ALLOCATION_POOL_END=$5
 
 source /home/stack/overcloudrc
 
@@ -40,7 +42,7 @@ openstack network show external
 EXTERNAL_NETWORK_RESULT=$?
 if [[ $EXTERNAL_NETWORK_RESULT -ne 0 ]]; then
     openstack network create --external --provider-network-type flat --provider-physical-network datacentre external
-    openstack subnet create external --network external --dhcp --allocation-pool start=10.9.88.90,end=10.9.88.95 --gateway 10.9.88.254 --subnet-range 10.9.88.0/24
+    openstack subnet create external --network external --dhcp --allocation-pool start=${ALLOCATION_POOL_START},end=${ALLOCATION_POOL_END} --gateway 10.9.88.254 --subnet-range 10.9.88.0/24
     openstack router create external
     openstack router add subnet external default
     neutron router-gateway-set external external
