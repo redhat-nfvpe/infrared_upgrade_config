@@ -5,7 +5,8 @@
 # $2: path for the testing image to use
 # $3: user to login into the testing image
 # $4: physical network for sriov/dpdk
-# $5:
+# $5: floating ip range start
+# $6: floating ip range end
 SEGMENTATION_ID=$1
 PATH_TO_TEST_IMAGE=$2
 LOGIN_USER=$3
