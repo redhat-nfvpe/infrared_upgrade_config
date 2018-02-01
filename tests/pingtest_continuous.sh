@@ -2,11 +2,16 @@
 
 # this script will accept parameters:
 # $1: provider segment for sriov_dpdk vlan
+# $2: path for the testing image to use
+# $3: user to login into the testing image
+# $4: physical network for sriov/dpdk
+# $5:
 SEGMENTATION_ID=$1
 PATH_TO_TEST_IMAGE=$2
 LOGIN_USER=$3
-ALLOCATION_POOL_START=$4
-ALLOCATION_POOL_END=$5
+PHYSICAL_NETWORK=$4
+ALLOCATION_POOL_START=$5
+ALLOCATION_POOL_END=$6
 
 source /home/stack/overcloudrc
 
@@ -53,7 +58,7 @@ openstack network show sriov_dpdk
 SRIOV_NETWORK_RESULT=$?
 
 if [[ $SRIOV_NETWORK_RESULT -ne 0 ]]; then
-    openstack network create sriov_dpdk --provider-network-type vlan --provider-physical-network sriov_dpdk --provider-segment $SEGMENTATION_ID
+    openstack network create sriov_dpdk --provider-network-type vlan --provider-physical-network $PHYSICAL_NETWORK --provider-segment $SEGMENTATION_ID
     neutron subnet-create --name subnet_sriov_dpdk --disable-dhcp --gateway 10.0.10.1 --allocation-pool start=10.0.10.2,end=10.0.10.3 sriov_dpdk 10.0.10.1/24
 fi
 
