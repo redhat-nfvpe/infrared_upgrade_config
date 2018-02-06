@@ -16,7 +16,7 @@ parameter_defaults:
     StorageAllocationPools: [{'start': '172.17.7.10', 'end': '172.17.7.200'}]
     StorageMgmtAllocationPools: [{'start': '172.17.8.10', 'end': '172.17.8.200'}]
     TenantAllocationPools: [{'start': '172.17.6.10', 'end': '172.17.6.200'}]
-    ExternalAllocationPools: [{'start': '10.9.88.100',             'end': '10.9.88.109'}]     
+    ExternalAllocationPools: [{'start': '10.9.88.100',             'end': '10.9.88.105'}]
     ExternalInterfaceDefaultRoute: 10.9.88.254
     InternalApiNetworkVlanID: 201
     StorageNetworkVlanID: 203
