@@ -48,7 +48,7 @@ openstack network show external
 EXTERNAL_NETWORK_RESULT=$?
 if [[ $EXTERNAL_NETWORK_RESULT -ne 0 ]]; then
     openstack network create --external --provider-network-type flat --provider-physical-network datacentre external
-    openstack subnet create external --network external --dhcp --allocation-pool start=${ALLOCATION_POOL_START},end=${ALLOCATION_POOL_END} --gateway 10.9.88.254 --subnet-range 10.9.88.0/24
+    openstack subnet create external --network external --no-dhcp --allocation-pool start=${ALLOCATION_POOL_START},end=${ALLOCATION_POOL_END} --gateway 10.9.88.254 --subnet-range 10.9.88.0/24
     openstack router create external
     openstack router add subnet external default
     neutron router-gateway-set external external
