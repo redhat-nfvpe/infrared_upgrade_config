@@ -117,6 +117,7 @@ if [[ $VM_1_RESULT -ne 0 ]]; then
     sleep 5
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} 'sudo ip addr add 10.0.10.2/24 dev eth1'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} 'sudo ip link set eth1 up'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} "printf 'ONBOOT=yes\nDEVICE=eth1\nNM_CONTROLLED=yes\nBOOTPROTO=static\nIPADDR=10.0.10.2\nNETMASK=255.255.255.0' | sudo tee /etc/sysconfig/network-scripts/ifcfg-eth1"
 fi
 
 openstack server show test-sriov_dpdk_vf_2
@@ -136,6 +137,7 @@ if [[ $VM_2_RESULT -ne 0 ]]; then
     sleep 5
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_2} 'sudo ip addr add 10.0.10.3/24 dev eth1'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_2} 'sudo ip link set eth1 up'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} "printf 'ONBOOT=yes\nDEVICE=eth1\nNM_CONTROLLED=yes\nBOOTPROTO=static\nIPADDR=10.0.10.3\nNETMASK=255.255.255.0' | sudo tee /etc/sysconfig/network-scripts/ifcfg-eth1"
 fi
 
 # continuously ping test between vms and output to file
