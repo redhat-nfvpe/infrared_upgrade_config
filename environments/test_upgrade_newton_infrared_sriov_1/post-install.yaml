@@ -52,9 +52,6 @@ resources:
 
               systemctl daemon-reload
               systemctl restart openvswitch
-
-              # change the nova conf setting
-              sed -i  '/\[DEFAULT\]/a resume_guests_state_on_host_boot=true' /etc/nova/nova.conf
             fi
           params:
             $COMPUTE_HOSTNAME_FORMAT: {get_param: ComputeHostnameFormat}
