@@ -10,7 +10,7 @@ VNF1_IP=$(openstack server list -f value -c Name -c Networks | grep vf_1 |  sed 
 VNF2_IP=$(openstack server list -f value -c Name -c Networks | grep vf_2 |  sed 's/.*, \(.*\);.*/\1/')
 
 # wait until it is accessible again
-while ! ping -c 1 ${VNF2_IP} &> /dev/null; do:; done
+while ! ping -c 1 ${VNF2_IP} &> /dev/null; do sleep 1; done
 
 # restore network connection
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${VNF1_IP} 'sudo ip addr add 10.0.10.3/24 dev eth1'
