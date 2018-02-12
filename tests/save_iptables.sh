@@ -1,0 +1,10 @@
+#!/bin/bash
+source /home/stack/stackrc
+
+COMPUTE1_IP=$(openstack server list -f value -c Name -c Networks | grep novacompute-0 |  cut -d ' ' -f2 | cut -d '=' -f2 )
+COMPUTE2_IP=$(openstack server list -f value -c Name -c Networks | grep novacompute-1 |  cut -d ' ' -f2 | cut -d '=' -f2 )
+
+# ssh into the vms and save iptables
+ssh heat-admin@${COMPUTE1_IP} 'sudo bash -c "iptables-save > /etc/sysconfig/iptables"'
+ssh heat-admin@${COMPUTE2_IP} 'sudo bash -c "iptables-save > /etc/sysconfig/iptables"'
+
