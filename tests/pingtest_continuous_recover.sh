@@ -4,7 +4,7 @@ LOGIN_USER=$1
 source /home/stack/overcloudrc
 
 # reboot the vnf
-nova reboot test-sriov_dpdk_vf_2
+nova start test-sriov_dpdk_vf_2
 
 VNF1_IP=$(openstack server list -f value -c Name -c Networks | grep vf_1 |  sed 's/.*, \(.*\);.*/\1/')
 VNF2_IP=$(openstack server list -f value -c Name -c Networks | grep vf_2 |  sed 's/.*, \(.*\);.*/\1/')
