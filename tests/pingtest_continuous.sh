@@ -138,6 +138,9 @@ if [[ $VM_2_RESULT -ne 0 ]]; then
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_2} 'sudo ip link set eth1 up'
 fi
 
+# execute a continuous pingtest on the first vm
+ping -D ${LAST_FIP_1} &> /tmp/external_pingtest_output &
+
 # continuously ping test between vms and output to file
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} "ping -D 10.0.10.3 &> /tmp/pingtest_output &"
 
