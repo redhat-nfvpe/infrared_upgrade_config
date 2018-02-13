@@ -139,5 +139,5 @@ if [[ $VM_2_RESULT -ne 0 ]]; then
 fi
 
 # continuously ping test between vms and output to file
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} "ping -D -w 4000 10.0.10.3 &> /tmp/pingtest_output &"
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${LAST_FIP_1} "ping -D 10.0.10.3 &> /tmp/pingtest_output &"
 
