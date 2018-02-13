@@ -20,11 +20,11 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${
 sleep 60
 
 # kill the ping process if still runs
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${VNF1_IP} $LOGIN_USER@$VNF1_IP 'PROCESS=$(pgrep -f "ping -D 10.0.10.3"); kill -2 $PROCESS'
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${VNF1_IP} 'PROCESS=$(pgrep -f "ping -D 10.0.10.3"); kill -2 $PROCESS'
 
 # then output file content
 echo "pingtest results between vms"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${VNF1_IP} $LOGIN_USER@$VNF1_IP "tail -n2 /tmp/pingtest_output"
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${LOGIN_USER}@${VNF1_IP} "tail -n2 /tmp/pingtest_output"
 
 # kill the pingtest on the undercloud and output results
 PROCESS1=$(pgrep -f "ping -D ${VNF1_IP}")
