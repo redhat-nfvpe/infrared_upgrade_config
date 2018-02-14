@@ -87,14 +87,11 @@
 
       - shell: |
           # minor update in undercloud
-          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/minor_update_scripts/undercloud_minor_update.sh undercloud-0:/home/stack/
-
           cd /opt/infrared
 
           START=$(date +%s)
           infrared tripleo-undercloud -o undercloud-update.yml --update-undercloud yes --version newton  \
               --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build false  -e undercloud_version={release} || true
-          infrared ssh undercloud-0 "bash /home/stack/undercloud_minor_update.sh"
           END_UPDATE_STACK=$(date +%s)
           DIFF=$(( $END_UPDATE_STACK - $START ))
           echo "****** Time for undercloud minor update is $DIFF seconds *********"
