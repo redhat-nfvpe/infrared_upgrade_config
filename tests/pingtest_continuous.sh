@@ -13,6 +13,7 @@ LOGIN_USER=$3
 PHYSICAL_NETWORK=$4
 ALLOCATION_POOL_START=$5
 ALLOCATION_POOL_END=$6
+COMPUTE_SUFFIX=$7
 
 source /home/stack/overcloudrc
 
@@ -23,8 +24,8 @@ ZONE_RESULT=$?
 if [[ $ZONE_RESULT -ne 0 ]]; then
     openstack aggregate create --zone=sriov_dpdk sriov_dpdk
 
-    openstack aggregate add host sriov_dpdk overcloud-novacompute-0.localdomain
-    openstack aggregate add host sriov_dpdk overcloud-novacompute-1.localdomain
+    openstack aggregate add host sriov_dpdk overcloud-${COMPUTE_SUFFIX}-0.localdomain
+    openstack aggregate add host sriov_dpdk overcloud-${COMPUTE_SUFFIX}-1.localdomain
 fi
 
 # create special flavor if not exists
