@@ -77,17 +77,27 @@
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/fedora.qcow2 undercloud-0:/home/stack/
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/sriov_pingtest.sh undercloud-0:/home/stack/
           cd /opt/infrared
-          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest.sh 210 /home/stack/fedora.qcow2 fedora'
+          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest.sh 210 /home/stack/fedora.qcow2 fedora sriov 10.9.88.106 10.9.88.109'
+
+      - shell: |
+          # fix iptables
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/save_iptables.sh undercloud-0:/home/stack/
+          cd /opt/infrared
+          infrared ssh undercloud-0 "bash /home/stack/save_iptables.sh"
 
       - shell: |
           # minor update in undercloud
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/minor_update_scripts/undercloud_minor_update.sh undercloud-0:/home/stack/
 
           cd /opt/infrared
-          infrared ssh undercloud-0 "bash /home/stack/undercloud_minor_update.sh"
 
+          START=$(date +%s)
           infrared tripleo-undercloud -o undercloud-update.yml --update-undercloud yes --version newton  \
               --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build false  -e undercloud_version={release} || true
+          infrared ssh undercloud-0 "bash /home/stack/undercloud_minor_update.sh"
+          END_UPDATE_STACK=$(date +%s)
+          DIFF=$(( $END_UPDATE_STACK - $START ))
+          echo "****** Time for undercloud minor update is $DIFF seconds *********"
 
       - shell: |
           # minor update in overcloud
@@ -95,21 +105,29 @@
 
           cd /opt/infrared
 
+          START=$(date +%s)
           infrared tripleo-overcloud -o overcloud-update.yml --ocupdate True --build false --version {environment} \
               --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,update_collect_info,update_undercloud_validation" \
               --build false  -e undercloud_version={release} --deployment-files ./test_upgrade_{release}_infrared_sriov_{environment} \
               --overcloud-script /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/overcloud_deploy.sh
 
-          infrared ssh undercloud-0 "bash /home/stack/overcloud_minor_update_nodes.sh"
+          END_UPDATE_STACK=$(date +%s)
+          DIFF=$(( $END_UPDATE_STACK - $START ))
+          echo "****** Time for minor update stack is $DIFF seconds *********"
+
+          infrared ssh undercloud-0 "bash /home/stack/overcloud_minor_update_nodes.sh overcloud-novacompute-1"
+          END=$(date +%s)
+          DIFF=$(( $END - $START ))
+          echo "*********** Total time for minor update is $DIFF seconds ***************"
 
       - shell: |
-          # wait a bit for the vms to be stopped after reboot
+          # wait until vnfs come back
           sleep 30
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/pingtest_continuous_recover.sh undercloud-0:/home/stack/
 
-          # execute pingtest on vms
-          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/sriov_pingtest_after.sh undercloud-0:/home/stack/
+          # respin network on vnf 1
           cd /opt/infrared
-          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest_after.sh fedora'
+          infrared ssh undercloud-0 "bash /home/stack/pingtest_continuous_recover.sh fedora"
 
     wrappers:
       - copy-to-slave:
