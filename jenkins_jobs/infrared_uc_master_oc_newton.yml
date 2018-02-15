@@ -54,7 +54,7 @@
 
           infrared tripleo-undercloud -vv -o install.yml \
               -o undercloud-install.yml \
-              --version {relese} \
+              --version newton --build current-passed-ci \
               --config-file /opt/infrared/test_upgrade_{release}_infrared_sriov_{environment}/undercloud.conf --images-cleanup false
 
       - shell: |
