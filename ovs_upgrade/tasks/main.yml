@@ -20,7 +20,7 @@
 
   - name: switch repo to master which contains latest ovs
     become: true
-    shell: "tripleo-repos -b master current"
+    shell: "tripleo-repos -b queens current"
 
   - name: update packages to latest
     become: true
