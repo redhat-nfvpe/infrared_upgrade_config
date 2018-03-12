@@ -6,4 +6,5 @@ openstack overcloud deploy --templates --control-scale 3 --compute-scale 1 --cep
 -e /usr/share/openstack-tripleo-heat-templates/environments/net-single-nic-with-vlans.yaml \
 -e /home/stack/test_upgrade_10_infrared_uc_master_oc_newton/network-environment.yaml \
 -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-sriov.yaml \
+-e /home/stack/test_upgrade_10_infrared_uc_master_oc_newton/disable_telemetry.yaml \
 --ntp-server clock.redhat.com --log-file overcloud_install.log
