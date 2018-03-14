@@ -7,7 +7,7 @@
           fail: true
 
 - job-template:
-    name: 'infrared-hybrid-osp10-deploy-{environment}-sriov-minor-update'
+    name: 'infrared-hybrid-newton-deploy-{environment}-sriov-minor-update'
     node: 'slave_{environment}'
 
    builders:
@@ -41,42 +41,43 @@
 
           infrared tripleo-undercloud -vv -o install.yml \
               -o undercloud-install.yml \
-              --version 10 --images-task rpm --build z3 \
-              --config-file /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/undercloud.conf
+              --version {relese} \
+              --config-file /opt/infrared/test_upgrade_newton_infrared_sriov_{environment}/undercloud.conf
+
+      - shell: |
+          # import images
+          cd /opt/infrared
+
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/*tar* undercloud-0:/home/stack/
+
+          infrared tripleo-undercloud -vv \
+              -o undercloud-images.yml \
+              --images-task=import \
+              --images-url=file:///home/stack
 
       - shell: |
           # introspect nodes
           cd /opt/infrared
 
-          infrared tripleo-overcloud -vv -o overcloud-install.yml --version 10 --deployment-files /opt/infrared/test_upgrade_10_infrared_sriov_{environment} \
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files /opt/infrared/test_upgrade_newton_infrared_sriov_{environment} \
               --introspect=yes --tagging=yes --deploy=no -e provison_virsh_network_name=br-ctlplane \
-              --hybrid /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/compute.json --vbmc-force yes
+              --hybrid /opt/infrared/test_upgrade_newton_infrared_sriov_{environment}/compute.json --vbmc-force yes
 
       - shell: |
           # deploy
           cd /opt/infrared
 
-          infrared tripleo-overcloud -vv -o overcloud-install.yml --version 10 --deployment-files /opt/infrared/test_upgrade_10_infrared_sriov_{environment} \
-              --overcloud-script /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes \
-              -e provison_virsh_network_name=br-ctlplane --hybrid /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/compute.json \
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files /opt/infrared/test_upgrade_newton_infrared_sriov_{environment} \
+              --overcloud-script /opt/infrared/test_upgrade_newton_infrared_sriov_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes \
+              -e provison_virsh_network_name=br-ctlplane --hybrid /opt/infrared/test_upgrade_newton_infrared_sriov_{environment}/compute.json \
               --ansible-args="skip-tags=inventory_update" --vbmc-force yes
-
-      - shell: |
-          # update inventory
-          cd /opt/infrared
-          infrared tripleo-overcloud -vv -o overcloud-install.yml --version 10 --deployment-files /opt/infrared/test_upgrade_10_infrared_sriov_{environment} \
-          --overcloud-script /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes -e undercloud_version=10 \
-          -e provison_virsh_network_name=br-ctlplane --hybrid /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/compute.json  --ansible-args="tags=inventory_update" --vbmc-force yes
-
-          # fix to pass undercloud validation
-          infrared ssh undercloud-0 'cp /home/stack/test_upgrade_10_infrared_sriov_{environment}/overcloud_deploy.sh /home/stack/overcloud_deploy.sh; chmod a+x /home/stack/overcloud_deploy.sh'
 
       - shell: |
           # create vms and execute pingtest on it
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/fedora.qcow2 undercloud-0:/home/stack/
           scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r ./infrared_upgrade_config/tests/sriov_pingtest.sh undercloud-0:/home/stack/
           cd /opt/infrared
-          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest.sh 210 /home/stack/fedora.qcow2 fedora sriov 10.9.88.106 10.9.88.109 compute'
+          infrared ssh undercloud-0 'bash /home/stack/sriov_pingtest.sh 210 /home/stack/fedora.qcow2 fedora sriov 10.9.88.106 10.9.88.109'
 
       - shell: |
           # fix iptables
@@ -89,8 +90,8 @@
           cd /opt/infrared
 
           START=$(date +%s)
-          infrared tripleo-undercloud -o undercloud-update.yml --update-undercloud yes --version 10  \
-              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build false  -e undercloud_version=10 || true
+          infrared tripleo-undercloud -o undercloud-update.yml --update-undercloud yes --version newton  \
+              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build current-passed-ci  -e undercloud_version=newton || true
           END_UPDATE_STACK=$(date +%s)
           DIFF=$(( $END_UPDATE_STACK - $START ))
           echo "****** Time for undercloud minor update is $DIFF seconds *********"
@@ -102,27 +103,19 @@
           cd /opt/infrared
 
           START=$(date +%s)
-          infrared tripleo-overcloud -o overcloud-update.yml --ocupdate True --build latest --mirror qeos \
-              --ansible-args="skip-tags=deploy" -e undercloud_version=10 --deployment-files ./test_upgrade_10_infrared_sriov_{environment} \
-              --overcloud-script /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/overcloud_deploy.sh --osrelease 7.4
+          infrared tripleo-overcloud -o overcloud-update.yml --ocupdate True --build false --version {environment} \
+              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,update_collect_info,update_undercloud_validation" \
+              --build false  -e undercloud_version=newton --deployment-files ./test_upgrade_newton_infrared_sriov_{environment} \
+              --overcloud-script /opt/infrared/test_upgrade_newton_infrared_sriov_{environment}/overcloud_deploy.sh
 
           END_UPDATE_STACK=$(date +%s)
           DIFF=$(( $END_UPDATE_STACK - $START ))
           echo "****** Time for minor update stack is $DIFF seconds *********"
 
-          infrared ssh undercloud-0 "bash /home/stack/overcloud_minor_update_nodes.sh controller,overcloud-compute-1"
-
+          infrared ssh undercloud-0 "bash /home/stack/overcloud_minor_update_nodes.sh controller,overcloud-novacompute-1"
           END=$(date +%s)
           DIFF=$(( $END - $START ))
-
           echo "*********** Total time for minor update is $DIFF seconds ***************"
-
-      - shell: |
-          # show detailed times
-          for NODE in overcloud-controller-0 overcloud-controller-1 overcloud-controller-2 overcloud-compute-0 overcloud-compute-1
-          do
-              infrared ssh $NODE 'sudo yum history'
-          done
 
       - shell: |
           # wait until vnfs come back

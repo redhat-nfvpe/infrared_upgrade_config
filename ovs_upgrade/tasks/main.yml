@@ -1,37 +1,57 @@
 ---
-- name: install dependency packages
-  become: true
-  yum:
-    name: git
-    state: present
+- block:
+  - name: install dependency packages
+    become: true
+    yum:
+      name: git
+      state: present
 
-- name: clone tripleo-repos
-  become: true
-  git:
-    repo: "{{ tripleo_repos_url }}"
-    dest: /root/tripleo-repos
-    clone: yes
-    force: yes
+  - name: clone tripleo-repos
+    become: true
+    git:
+      repo: "{{ tripleo_repos_url }}"
+      dest: /root/tripleo-repos
+      clone: yes
+      force: yes
 
-- name: install tripleo-repos
-  become: true
-  shell: "cd /root/tripleo-repos; python setup.py install"
+  - name: install tripleo-repos
+    become: true
+    shell: "cd /root/tripleo-repos; python setup.py install"
 
-- name: switch repo to master which contains latest ovs
-  become: true
-  shell: "tripleo-repos -b master current"
+  - name: switch repo to master which contains latest ovs
+    become: true
+    shell: "tripleo-repos -b queens current"
 
-- name: update packages to latest
-  become: true
-  yum:
-    name: "{{ item }}"
-    state: latest
-  with_items:
-    - "{{ packages_to_upgrade }}"
+  - name: update packages to latest
+    become: true
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - "{{ packages_to_upgrade }}"
 
-- name: switch repo back
-  become: true
-  shell: "tripleo-repos -b newton current"
+  - name: switch repo back
+    become: true
+    shell: "tripleo-repos -b newton current"
+  when: ansible_distribution == 'CentOS'
+
+- block:
+  - name: switch repo to master which contains latest ovs
+    become: true
+    shell: "rhos-release 13"
+
+  - name: update packages to latest
+    become: true
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - "{{ packages_to_upgrade }}"
+
+  - name: switch repo back
+    become: true
+    shell: "rhos-release -x 10"
+  when: ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution=='RedHat'
 
 # TODO: retrieve dpdk port mapping automatically
 #       instead of using configurable parameter:
