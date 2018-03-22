@@ -68,7 +68,7 @@
 - name: config ovs default.conf
   become: true
   lineinfile:
-    dest: /etc/openvswitch/default.conf
+    dest: /etc/sysconfig/openvswitch
     regexp: '^OVS_USER_ID=".*"'
     line: 'OVS_USER_ID="openvswitch:hugetlbfs"'
     state: present
