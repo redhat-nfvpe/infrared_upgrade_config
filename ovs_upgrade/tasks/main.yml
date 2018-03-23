@@ -69,7 +69,7 @@
   become: true
   lineinfile:
     dest: /etc/sysconfig/openvswitch
-    regexp: '^OVS_USER_ID=".*"'
+    regexp: '^#?OVS_USER_ID=".*"'
     line: 'OVS_USER_ID="openvswitch:hugetlbfs"'
     state: present
     backrefs: yes
