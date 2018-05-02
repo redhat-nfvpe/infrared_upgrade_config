@@ -1,0 +1,132 @@
+- wrapper:
+    name: build-timeout
+    wrappers:
+      - timeout:
+          timeout: '{timeout}'
+          timeout-var: 'BUILD_TIMEOUT'
+          fail: true
+
+- job-template:
+    name: 'infrared-hybrid-newton-deploy-{environment}-sriov-complete-ffu'
+    node: 'slave_{environment}'
+
+   builders:
+      - shell: |
+          cd /opt/infrared
+
+          infrared workspace checkout ci-{environment}
+          infrared workspace cleanup ci-{environment}
+          infrared virsh -vvv --host-address=127.0.0.2 --host-key=$HOME/.ssh/id_rsa --cleanup yes --kill yes --topology-nodes hybrid_undercloud:1,hybrid_controller:3 \
+              -e override.controller.memory=16384 -e override.undercloud.memory=28672 -e override.controller.cpu=4 -e override.undercloud.cpu=4
+
+          # do manual cleaning, as infrared fails to clean up sometimes
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy undercloud-0 || true;virsh undefine undercloud-0 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy controller-0 || true;virsh undefine controller-0 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy controller-1 || true;virsh undefine controller-1 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh destroy controller-2 || true;virsh undefine controller-2 || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy br-all || true;virsh net-undefine br-all || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy br-ctlplane || true;virsh net-undefine br-ctlplane || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy br-link || true;virsh net-undefine br-link || true'
+          ssh -i $HOME/.ssh/id_rsa root@127.0.0.2 'virsh net-destroy management || true;virsh net-undefine management || true'
+
+      - shell: |
+          # provision
+          cd /opt/infrared
+          infrared virsh -vvv --host-address=127.0.0.2 --host-key=$HOME/.ssh/id_rsa --cleanup no --kill no --topology-nodes hybrid_undercloud:1,hybrid_controller:3 \
+              -e override.controller.memory=16384 -e override.undercloud.memory=28672 -e override.controller.cpu=4 -e override.undercloud.cpu=4 --topology-network 3_bridges_1_net
+
+      - shell: |
+          # install undercloud
+          cd /opt/infrared
+
+          infrared tripleo-undercloud -vv -o install.yml \
+              -o undercloud-install.yml \
+              --version 10 --images-task rpm --build z3 \
+              --config-file /opt/infrared/test_upgrade_10_infrared_sriov_{environment}/undercloud.conf
+
+      - shell: |
+          # import images
+          cd /opt/infrared
+          scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -F /opt/infrared/.workspaces/ci-1/ansible.ssh.config -r /opt/infrared_images/newton/*.tar* undercloud-0:/home/stack/
+         infrared tripleo-undercloud -vv -o undercloud-images.yml --images-task=import --images-url=file:///home/stack
+
+      - shell: |
+          # introspect nodes
+          cd /opt/infrared
+
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment} \
+              --introspect=yes --tagging=yes --deploy=no -e undercloud_version=newton -e provison_virsh_network_name=br-ctlplane \
+              --hybrid /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/compute.json --vbmc-force yes
+
+      - shell: |
+          # deploy
+          cd /opt/infrared
+
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment} \
+              --overcloud-script /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes \
+              -e provison_virsh_network_name=br-ctlplane --hybrid /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/compute.json \
+              --ansible-args="skip-tags=inventory_update" --vbmc-force yes
+
+      - shell: |
+          # update inventory
+          cd /opt/infrared
+          infrared tripleo-overcloud -vv -o overcloud-install.yml --version newton --deployment-files /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment} \
+          --overcloud-script /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/overcloud_deploy.sh --introspect=no --tagging=no --deploy=yes -e undercloud_version=newton \
+          -e provison_virsh_network_name=br-ctlplane --hybrid /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/compute.json  --ansible-args="tags=inventory_update" --vbmc-force yes
+
+          # fix to pass undercloud validation
+          infrared ssh undercloud-0 'cp /home/stack/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/overcloud_deploy.sh /home/stack/overcloud_deploy.sh; chmod a+x /home/stack/overcloud_deploy.sh'
+
+      - shell: |
+          # minor update in undercloud
+          cd /opt/infrared
+
+          START=$(date +%s)
+          infrared tripleo-undercloud -o undercloud-update.yml --update-undercloud yes --version newton  \
+              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,configure" --build false  -e undercloud_version=newton
+          END_UPDATE_STACK=$(date +%s)
+          DIFF=$(( $END_UPDATE_STACK - $START ))
+          echo "****** Time for undercloud minor update is $DIFF seconds *********"
+
+      - shell: |
+          # minor update in overcloud
+          cd /opt/infrared
+
+          START=$(date +%s)
+          infrared tripleo-overcloud -o overcloud-update.yml --ocupdate True --build false --mirror newton \
+              --ansible-args="skip-tags=update_repos,upgrade_repos,rhos-release,deploy,update_collect_info,update_undercloud_validation;limit=undercloud-0" \
+              -e undercloud_version=newton --deployment-files ./test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment} \
+              --overcloud-script /opt/infrared/test_upgrade_10_infrared_sriov_no_telemetry_add_ceph_{environment}/overcloud_deploy.sh
+
+          END_UPDATE_STACK=$(date +%s)
+          DIFF=$(( $END_UPDATE_STACK - $START ))
+          echo "****** Time for minor update stack is $DIFF seconds *********"
+
+      - shell: |
+          # upgrade undercloud
+          cd /opt/infrared
+          time infrared tripleo-upgrade     --undercloud-ffu-upgrade yes     --undercloud-ffu-releases 'ocata,pike,queens' -e ffu_undercloud_repo_type="tripleo-repos"
+
+      - shell: |
+          # update containers
+          cd /opt/infrared
+          infrared ssh undercloud-0 'mkdir -p /home/stack/virt || true'
+          infrared ssh undercloud-0 'openstack overcloud container image prepare --namespace docker.io/tripleoqueens --tag current-tripleo  --output-env-file /home/stack/virt/docker-images.yaml'
+
+      - shell: |
+          # upgrade overcloud
+          cd /opt/infrared
+          infrared tripleo-upgrade --overcloud-ffu-upgrade yes --overcloud-ffu-releases 'ocata,pike,queens' -e ffu_overcloud_repo_type="tripleo-repos" \
+          --overcloud-ffu-compute-rolling true --upstream-container-images true
+
+    wrappers:
+      - copy-to-slave:
+          includes:
+            - '**/toad_envs/**'
+          relative-to: 'userContent'
+      - build-timeout:
+          timeout: 360
+      - timestamps
+      - workspace-cleanup
+
+
