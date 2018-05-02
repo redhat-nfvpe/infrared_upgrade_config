@@ -1,0 +1,71 @@
+resource_registry:
+    OS::TripleO::Controller::Net::SoftwareConfig: nic-configs/controller.yaml
+    OS::TripleO::Compute::Net::SoftwareConfig: nic-configs/compute.yaml
+    OS::TripleO::CephStorage::Net::SoftwareConfig: nic-configs/ceph-storage.yaml
+    OS::TripleO::NodeUserData: first-boot.yaml
+    OS::TripleO::NodeExtraConfigPost: post-install.yaml
+    OS::TripleO::Services::CeilometerApi: OS::Heat::None
+    OS::TripleO::Services::CeilometerCollector: OS::Heat::None
+    OS::TripleO::Services::CeilometerExpirer: OS::Heat::None
+    OS::TripleO::Services::CeilometerAgentCentral: OS::Heat::None
+    OS::TripleO::Services::CeilometerAgentNotification: OS::Heat::None
+    OS::TripleO::Services::CeilometerAgentIpmi: OS::Heat::None
+    OS::TripleO::Services::ComputeCeilometerAgent: OS::Heat::None
+    OS::TripleO::Services::GnocchiApi: OS::Heat::None
+    OS::TripleO::Services::GnocchiMetricd: OS::Heat::None
+    OS::TripleO::Services::GnocchiStatsd: OS::Heat::None
+    OS::TripleO::Services::AodhApi: OS::Heat::None
+    OS::TripleO::Services::AodhEvaluator: OS::Heat::None
+    OS::TripleO::Services::AodhNotifier: OS::Heat::None
+    OS::TripleO::Services::AodhListener: OS::Heat::None
+    OS::TripleO::Services::PankoApi: OS::Heat::None
+
+parameter_defaults:
+    InternalApiNetCidr: 172.17.5.0/24
+    StorageNetCidr: 172.17.7.0/24
+    StorageMgmtNetCidr: 172.17.8.0/24
+    TenantNetCidr: 172.17.6.0/24
+    ExternalNetCidr: 10.9.88.0/24
+    ControlPlaneSubnetCidr: '24'
+    InternalApiAllocationPools: [{'start': '172.17.5.10', 'end': '172.17.5.200'}]
+    StorageAllocationPools: [{'start': '172.17.7.10', 'end': '172.17.7.200'}]
+    StorageMgmtAllocationPools: [{'start': '172.17.8.10', 'end': '172.17.8.200'}]
+    TenantAllocationPools: [{'start': '172.17.6.10', 'end': '172.17.6.200'}]
+    ExternalAllocationPools: [{'start': '10.9.88.100',             'end': '10.9.88.105'}]     
+    ExternalInterfaceDefaultRoute: 10.9.88.254
+    InternalApiNetworkVlanID: 201
+    StorageNetworkVlanID: 203
+    StorageMgmtNetworkVlanID: 204
+    TenantNetworkVlanID: 202
+    NeutronExternalNetworkBridge: "''"
+    ControlPlaneDefaultRoute: 192.0.2.1
+    EC2MetadataIp: 192.0.2.1
+    ControlPlaneIp: 192.0.2.1
+    DnsServers: ["10.11.5.19", "10.10.160.2", "10.5.30.160"]
+    OvercloudControlFlavor: controller
+    OvercloudComputeFlavor: compute
+    NeutronTunnelTypes: 'vxlan'
+    NeutronNetworkType: 'vxlan'
+    # The OVS logical->physical bridge mappings to use.
+    NeutronBridgeMappings: 'datacentre:br-ex,sriov:br-sriov'
+    NeutronNetworkVLANRanges: 'datacentre,sriov:210:214'
+    NeutronMechanismDrivers: "openvswitch,sriovnicswitch"
+    NeutronFlatNetworks: 'datacentre'
+
+    # sriov configuration
+    NovaPCIPassthrough:
+      - devname: "p5p2"
+        physical_network: "sriov"
+    NeutronPhysicalDevMappings: "sriov:p5p2"
+    NeutronSriovNumVFs: "p5p2:5"
+    NeutronSupportedPCIVendorDevs: ['8086:1528','8086:1515']
+
+    NovaSchedulerDefaultFilters: ['AvailabilityZoneFilter','RamFilter','ComputeFilter','ComputeCapabilitiesFilter','ImagePropertiesFilter','ServerGroupAntiAffinityFilter','ServerGroupAffinityFilter','PciPassthroughFilter']
+    NovaSchedulerAvailableFilters: ["nova.scheduler.filters.all_filters","nova.scheduler.filters.pci_passthrough_filter.PciPassthroughFilter"]
+    ComputeKernelArgs: "intel_iommu=on default_hugepagesz=1GB hugepagesz=1G hugepages=12"
+    HostCpusList: "2,4,6,8,10,12,14,18,20,22"
+
+    ExtraConfig:
+        ceph::profile::params::osd_journal_size: 900
+        ceph::profile::params::osds: {/srv/data: {}}
+
