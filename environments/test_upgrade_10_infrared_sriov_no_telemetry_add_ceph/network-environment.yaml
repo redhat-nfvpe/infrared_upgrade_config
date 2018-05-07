@@ -64,8 +64,10 @@ parameter_defaults:
     NovaSchedulerAvailableFilters: ["nova.scheduler.filters.all_filters","nova.scheduler.filters.pci_passthrough_filter.PciPassthroughFilter"]
     ComputeKernelArgs: "intel_iommu=on default_hugepagesz=1GB hugepagesz=1G hugepages=12"
     HostCpusList: "2,4,6,8,10,12,14,18,20,22"
+    CephPoolDefaultSize: 1
+    CephPoolDefaultPgNum: 32
 
     ExtraConfig:
         ceph::profile::params::osd_journal_size: 900
-        ceph::profile::params::osds: {/srv/data: {}}
+        ceph::profile::params::osds: {'/dev/sdb': {'journal': '/dev/sdc'}}
 
