@@ -30,6 +30,7 @@ resources:
     properties:
       parts:
       - config: {get_resource: compute_kernel_args}
+      - config: {get_resource: wipe_disk}
   compute_kernel_args:
     type: OS::Heat::SoftwareConfig
     properties:
@@ -67,6 +68,10 @@ resources:
             $KERNEL_ARGS: {get_param: ComputeKernelArgs}
             $COMPUTE_HOSTNAME_FORMAT: {get_param: ComputeHostnameFormat}
             $TUNED_CORES: {get_param: HostCpusList}
+  wipe_disk:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config: {get_file: firstboot_scripts/wipe_disk.sh}
 
 outputs:
   OS::stack_id:
