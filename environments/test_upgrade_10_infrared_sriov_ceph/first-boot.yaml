@@ -1,0 +1,78 @@
+heat_template_version: 2014-10-16
+
+description: >
+  This is an example showing how you can do firstboot configuration
+  of the nodes via cloud-init.  To enable this, replace the default
+  mapping of OS::TripleO::NodeUserData in ../overcloud_resource_registry*
+
+parameters:
+  ComputeKernelArgs:
+    description: >
+      Space seprated list of Kernel args to be update to grub.
+      The given args will be appended to existing args of GRUB_CMDLINE_LINUX in file /etc/default/grub
+      Example: "intel_iommu=on default_hugepagesz=1GB hugepagesz=1G hugepages=1"
+    type: string
+    default: ""
+  ComputeHostnameFormat:
+    type: string
+    default: ""
+  HostCpusList:
+    description: >
+      A list or range of physical CPU cores to be tuned.
+      The given args will be appended to the tuned cpu-partitioning profile.
+      Ex. HostCpusList: '4-12' will tune cores from 4-12
+    type: string
+    default: ""
+
+resources:
+  userdata:
+    type: OS::Heat::MultipartMime
+    properties:
+      parts:
+      - config: {get_resource: compute_kernel_args}
+      - config: {get_resource: wipe_disk}
+  compute_kernel_args:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash
+            set -x
+            FORMAT=$COMPUTE_HOSTNAME_FORMAT
+            if [[ -z $FORMAT ]] ; then
+                FORMAT="compute" ;
+            else
+              FORMAT=$(echo $FORMAT | sed  's/\%index\%//g' | sed 's/\%stackname\%//g') ;
+            fi
+            if [[ $(hostname) == *$FORMAT* ]] ; then
+              yum install -y tuned-profiles-cpu-partitioning
+
+              tuned_conf_path="/etc/tuned/cpu-partitioning-variables.conf"
+              if [ -n "$TUNED_CORES" ]; then
+                grep -q "^isolated_cores" $tuned_conf_path
+                if [ "$?" -eq 0 ]; then
+                  sed -i 's/^isolated_cores=.*/isolated_cores=$TUNED_CORES/' $tuned_conf_path
+                else
+                  echo "isolated_cores=$TUNED_CORES" >> $tuned_conf_path
+                fi
+                tuned-adm profile cpu-partitioning
+              fi
+
+              sed 's/^\(GRUB_CMDLINE_LINUX=".*\)"/\1 $KERNEL_ARGS"/g' -i /etc/default/grub ;
+              grub2-mkconfig -o /etc/grub2.cfg
+
+              reboot
+            fi
+          params:
+            $KERNEL_ARGS: {get_param: ComputeKernelArgs}
+            $COMPUTE_HOSTNAME_FORMAT: {get_param: ComputeHostnameFormat}
+            $TUNED_CORES: {get_param: HostCpusList}
+  wipe_disk:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config: {get_file: firstboot_scripts/wipe_disk.sh}
+
+outputs:
+  OS::stack_id:
+    value: {get_resource: userdata}

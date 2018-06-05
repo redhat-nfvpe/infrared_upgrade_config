@@ -1,0 +1,128 @@
+---
+pre_ffu_undercloud_upgrade_2nd_release: []
+
+pre_ffu_undercloud_upgrade_3rd_release:  []
+
+pre_ffu_undercloud_upgrade_workarounds: []
+
+post_ffu_undercloud_upgrade_workarounds:
+
+  - BZ#1561255:
+     patch: false
+     basedir: ''
+     id: 0
+     command: source ~/stackrc; for address in $(openstack server list -f json | jq -r -c '.[] | .Networks' | grep -oP '[0-9.]+'); do ssh -q -o StrictHostKeyChecking=no heat-admin@$address 'if [ -f /usr/libexec/os-apply-config/templates/etc/os-net-config/config.json ]; then sudo mv /usr/libexec/os-apply-config/templates/etc/os-net-config/config.json /root/; fi'; done
+
+#  - BZ#1572825:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/563000/revisions/current/patch?download | base64 -d | sudo patch /usr/lib/python2.7/site-packages/tripleoclient/workflows/package_update.py'
+
+#  - BZ#1571901:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/564267/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+
+#  - BZ#1568714:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/563916/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+
+  - BZ#1573496:
+     patch: false
+     basedir: ''
+     id: 0
+     command: sudo ansible -m ini_file -a 'path=/etc/my.cnf.d/galera.cnf section=mysqld option=innodb_log_file_size value=1G' localhost; sudo systemctl restart mariadb
+
+#  - BZ#1574424:
+#     patch: true
+#     basedir: '/usr/share/openstack-tripleo-heat-templates/'
+#     id: 564686 
+#     command: ''
+#
+#  - BZ#1574424:
+#     patch: true
+#     basedir: '/usr/share/openstack-tripleo-heat-templates/'
+#     id: 566051 
+#     command: ''
+
+#  - BZ#1571901:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/566050/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+#
+#  - BZ#1573026:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/566134/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+
+#  - BZ#1563373:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/566231/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+
+  - BZ#1573922:
+      patch: false
+      basedir: /usr/share/openstack-tripleo-heat-templates/
+      id: 561666
+      command: 'curl -s -4 https://review.openstack.org/changes/565828/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+
+#  - BZ#1576079:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -s -4 https://review.openstack.org/changes/566960/revisions/current/patch?download | base64 -d | sudo patch -d /usr/lib/python2.7/site-packages/ -p1'
+#
+#  - BZ#1562220:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 561666
+#      command: 'curl -4 -L https://github.com/ceph/ceph-ansible/pull/2545.diff | sudo patch -d /usr/share/ceph-ansible/ -p1'
+
+  - BZ#1568561:
+     patch: true
+     basedir: '/usr/share/openstack-tripleo-heat-templates/'
+     id: 567270 
+     command: ''
+
+  - BZ#1563443:
+     patch: true
+     basedir: '/usr/share/openstack-tripleo-heat-templates/'
+     id: 567655 
+     command: ''
+
+pre_ffu_update_stack_outputs_workarounds: []
+
+pre_ffu_download_config_workarounds: []
+
+pre_ffu_upgrade_playbook_workarounds: []
+
+pre_ffu_upgrade_steps_playbook_workarounds: []
+
+pre_ffu_deploy_steps_playbook_workarounds: []
+
+pre_ffu_upgrade_converge_workarounds: []
+
+pre_ffu_overcloud_ceph_workarounds: []
+#  - BZ#CEPH_REPO:
+#     patch: false
+#     basedir: ''
+#     id: 0
+#     command: source ~/stackrc; for address in $(openstack server list -f json | jq -r -c '.[] | .Networks' | grep -oP '[0-9.]+'); do ssh -q -o StrictHostKeyChecking=no heat-admin@$address 'sudo rhos-release 13; sudo yum update -y'; done;
+#  - BZ#1573353:
+#     patch: false
+#     basedir: ''
+#     id: 0
+#     command: source ~/stackrc; for address in $(openstack server list -f json | jq -r -c '.[] | .Networks' | grep -oP '[0-9.]+'); do ssh -q -o StrictHostKeyChecking=no heat-admin@$address 'sudo yum remove -y python-networking-bigswitch'; done
+#  - BZ#1551397:
+#      patch: false
+#      basedir: /usr/share/openstack-tripleo-heat-templates/
+#      id: 547786
+#      command: 'curl http://sealusa2.mobius.lab.eng.rdu2.redhat.com/rabbitmq_workaround.patch | sudo patch -d /usr/share/openstack-tripleo-heat-templates/ -p1'
+#

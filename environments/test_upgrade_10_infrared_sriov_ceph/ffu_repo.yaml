@@ -1,0 +1,33 @@
+ffu_repo_script: |
+    set -e
+    MIRROR=default_repo_mirror
+    yum localinstall -y http://download.lab.bos.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
+    rhos-release -x
+    case $1 in
+      ocata)
+        rhos-release 11 -P
+        ;;
+      pike)
+        rhos-release 12 -P
+        ##BZ#1569605
+        #sudo yum update -y python-keystone
+        #sudo curl -o /usr/lib/python2.7/site-packages/keystone/common/sql/expand_repo/versions/022_expand_add_default_project_id_index.py http://file.brq.redhat.com/~mcornea/tripleo/osp13/022_expand_add_default_project_id_index.py
+        ;;
+      queens)
+        rhos-release 13 -P
+        rm -rf /etc/yum.repos.d/rhos-release-ceph*
+        ;;
+      *)
+        echo "unknown release $1" >&2
+        exit 1
+    esac
+    if [[ $MIRROR != 'default_repo_mirror' ]]; then
+      sed -i "s/download.*\.lab.*\.redhat\.com/rhos-qe-mirror-${MIRROR}.usersys.redhat.com/" /etc/yum.repos.d/*.repo
+      sed -i "s/download\(-node.*\)\?\.eng.*\.redhat\.com/rhos-qe-mirror-${MIRROR}.usersys.redhat.com/" /etc/yum.repos.d/*.repo
+      sed -i "s/rhos-release.*\.redhat\.com/rhos-qe-mirror-${MIRROR}.usersys.redhat.com\/rhos-release/" /etc/yum.repos.d/*.repo
+      sed -r -i "s/ayanami.*\.redhat.com/rhos-qe-mirror-${MIRROR}.usersys.redhat.com\/ayanami/" /etc/yum.repos.d/*.repo
+      sed -i "s/pulp.*\.redhat\.com/rhos-qe-mirror-${MIRROR}.usersys.redhat.com\/pulp/" /etc/yum.repos.d/*.repo
+      sed -i "s|cdn\.stage\.redhat\.com|rhos-qe-mirror-${MIRROR}.usersys.redhat.com/cdn-stage|" /etc/yum.repos.d/*.repo
+      sed -i "s|https\?://copr-be\.cloud\.fedoraproject\.org|http://rhos-qe-mirror-${MIRROR}.usersys.redhat.com/copr-be|" /etc/yum.repos.d/*.repo
+    fi
+    yum clean all
