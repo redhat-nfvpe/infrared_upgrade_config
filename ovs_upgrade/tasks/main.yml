@@ -38,7 +38,7 @@
 - block:
   - name: switch repo to master which contains latest ovs
     become: true
-    shell: "rhos-release 13"
+    shell: "rhos-release -x 10"
 
   - name: update packages to latest
     become: true
@@ -48,76 +48,7 @@
     with_items:
       - "{{ packages_to_upgrade }}"
 
-  - name: switch repo back
-    become: true
-    shell: "rhos-release -x 10"
   when: ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution=='RedHat'
-
-# TODO: retrieve dpdk port mapping automatically
-#       instead of using configurable parameter:
-#       dpdk_ports dict.
-- name: add ovs-extra/dev-args in dpdk network config file
-  become: true
-  lineinfile:
-    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item.key }}"
-    line: 'OVS_EXTRA="set Interface {{ item.key }} options:dpdk-devargs={{ item.value }}"'
-    state: present
-  with_dict: "{{ dpdk_ports }}"
-  when: dpdk_enabled|bool
-
-- name: config ovs default.conf
-  become: true
-  lineinfile:
-    dest: /etc/sysconfig/openvswitch
-    regexp: '^#?OVS_USER_ID=".*"'
-    line: 'OVS_USER_ID="openvswitch:hugetlbfs"'
-    state: present
-    backrefs: yes
-
-- name: config libvirt qemu.conf
-  become: true
-  lineinfile:
-    dest: /etc/libvirt/qemu.conf
-    line: "{{ item }}"
-    state: present
-  with_items:
-    - 'user = "openvswitch"'
-    - 'group = "hugetlbfs"'
-
-- name: add hugetlbfs group
-  become: true
-  group:
-    name: hugetlbfs
-    state: present
-
-- name: add openvswitch user
-  become: true
-  user:
-    name: openvswitch
-    shell: /sbin/nologin
-    comment: "OpenvSwitch Daemons"
-    home: /
-    system: yes
-    group: hugetlbfs
-
-- name: change owner and group of openvswitch files
-  become: true
-  file:
-    path: "{{ item.name }}"
-    owner: openvswitch
-    group: hugetlbfs
-    recurse: yes
-  with_items:
-    - name: "{{ ovs_config_dir }}"
-    - name: "{{ ovs_log_dir }}"
-    - name: "{{ ovs_run_dir }}"
-
-- name: change vfio group
-  become: true
-  file:
-    path: /dev/vfio
-    group: hugetlbfs
-    recurse: yes
 
 - name: restart server
   shell: sleep 2 && sudo reboot
