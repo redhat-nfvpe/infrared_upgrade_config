@@ -35,21 +35,6 @@
     shell: "tripleo-repos -b newton current"
   when: ansible_distribution == 'CentOS'
 
-- block:
-  - name: switch repo to master which contains latest ovs
-    become: true
-    shell: "rhos-release -x 10"
-
-  - name: update packages to latest
-    become: true
-    yum:
-      name: "{{ item }}"
-      state: latest
-    with_items:
-      - "{{ packages_to_upgrade }}"
-
-  when: ansible_distribution == 'Red Hat Enterprise Linux' or ansible_distribution=='RedHat'
-
 - name: restart server
   shell: sleep 2 && sudo reboot
   async: 1
