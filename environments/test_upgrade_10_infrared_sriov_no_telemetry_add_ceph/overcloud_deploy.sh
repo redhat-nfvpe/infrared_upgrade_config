@@ -4,6 +4,8 @@ openstack overcloud deploy --templates \
 --control-scale 3 \
 --compute-scale 1 \
 --ceph-storage-scale 1 \
+--compute-flavor compute \
+--ceph-storage-flavor storage \
 -e /usr/share/openstack-tripleo-heat-templates/environments/puppet-pacemaker.yaml \
 -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml \
 -e /usr/share/openstack-tripleo-heat-templates/environments/net-single-nic-with-vlans.yaml \
